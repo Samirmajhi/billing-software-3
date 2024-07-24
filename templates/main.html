@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Main Page{% endblock %}
+{% block content %}
+    <h2>Welcome to the Billing System</h2>
+    <div class="row">
+        <div class="col-lg-4">
+            <a href="{{ url_for('purchase') }}" class="btn btn-primary btn-block">Purchase</a>
+        </div>
+        <div class="col-lg-4">
+            <a href="{{ url_for('sales') }}" class="btn btn-success btn-block">Sales</a>
+        </div>
+        <div class="col-lg-4">
+            <a href="{{ url_for('stock') }}" class="btn btn-warning btn-block">Check Stock</a>
+        </div>
+    </div>
+{% endblock %}

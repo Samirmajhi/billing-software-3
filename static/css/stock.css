@@ -1,0 +1,104 @@
+    /* Custom styles for the stock management page */
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+    }
+
+    h2 {
+        color: #333;
+        margin-bottom: 30px;
+    }
+
+    .table-responsive {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #f1f3f5;
+        border-top: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0,0,0,.02);
+    }
+
+    .sort-link {
+        color: #333;
+        text-decoration: none;
+    }
+
+    .sort-link:hover {
+        color: #007bff;
+    }
+
+    .sort-link .fas {
+        margin-left: 5px;
+    }
+
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+    }
+
+    .badge-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .badge-danger {
+        background-color: #dc3545;
+    }
+
+    .btn {
+        font-weight: 500;
+    }
+
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #ced4da;
+    }
+
+    .btn-outline-secondary:hover {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .pagination {
+        margin-top: 20px;
+    }
+
+    .page-link {
+        color: #007bff;
+    }
+
+    .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    #search-input, #stock-level-filter {
+        height: calc(1.5em + 0.75rem + 2px);
+    }
+
+    @media (max-width: 768px) {
+        .col-md-6, .col-md-2, .col-md-4 {
+            margin-bottom: 15px;
+        }
+    }

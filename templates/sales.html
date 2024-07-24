@@ -1,0 +1,266 @@
+{% extends "layout.html" %}
+{% block title %}Record Sale{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Record Sale</h2>
+    <form id="sales-form" method="POST" action="{{ url_for('sales') }}">
+        {{ form.hidden_tag() }}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.product_name.label(class="form-label") }}
+                    {{ form.product_name(class="form-control", autocomplete="off", id="product_name") }}
+                    <div id="product-suggestions" class="list-group mt-1"></div>
+                    {% for error in form.product_name.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.unit.label(class="form-label") }}
+                    {{ form.unit(class="form-control", id="unit") }}
+                    {% for error in form.unit.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.quantity.label(class="form-label") }}
+                    {{ form.quantity(class="form-control", type="number", min="1", step="1", id="quantity") }}
+                    {% for error in form.quantity.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                    <small id="stock-info" class="form-text text-muted"></small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.unit_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">RS.</span>
+                        {{ form.unit_price(class="form-control", type="number", min="0.01", step="0.01", id="unit_price") }}
+                    </div>
+                    {% for error in form.unit_price.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.total_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">RS.</span>
+                        {{ form.total_price(class="form-control", readonly=true, id="total_price") }}
+                    </div>
+                    {% for error in form.total_price.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.payment_mode.label(class="form-label") }}
+                    {{ form.payment_mode(class="form-control", id="payment_mode") }}
+                    {% for error in form.payment_mode.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.sale_date.label(class="form-label") }}
+                    {{ form.sale_date(class="form-control", readonly=true, id="sale_date") }}
+                    {% for error in form.sale_date.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+            <div class="col-md-6">
+                <div class="form-group d-flex align-items-center">
+                    {{ form.is_bulk.label(class="form-check-label ms-2 order-2") }}
+                    {{ form.is_bulk(class="form-check-input order-1", id="is_bulk") }}
+                    {% for error in form.is_bulk.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        <div class="row mt-3" id="conversion-factor-row" style="display: none;">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.conversion_factor.label(class="form-label") }}
+                    {{ form.conversion_factor(class="form-control", type="number", min="1", step="1", id="conversion_factor") }}
+                    {% for error in form.conversion_factor.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            {{ form.submit(class="btn btn-success") }}
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productNameField = document.getElementById('product_name');
+        const unitField = document.getElementById('unit');
+        const quantityField = document.getElementById('quantity');
+        const unitPriceField = document.getElementById('unit_price');
+        const conversionFactorField = document.getElementById('conversion_factor');
+        const totalPriceField = document.getElementById('total_price');
+        const saleDateField = document.getElementById('sale_date');
+        const stockInfo = document.getElementById('stock-info');
+        const productSuggestions = document.getElementById('product-suggestions');
+        const isBulkField = document.getElementById('is_bulk');
+        const conversionFactorRow = document.getElementById('conversion-factor-row');
+        const submitButton = document.querySelector('button[type="submit"]');
+
+        // Set the sale date to today's date if it's empty
+        if (!saleDateField.value) {
+            const today = new Date().toISOString().split('T')[0];
+            saleDateField.value = today;
+        }
+
+        function calculateTotalPrice() {
+            const quantity = parseFloat(quantityField.value);
+            const unitPrice = parseFloat(unitPriceField.value);
+            const conversionFactor = parseFloat(conversionFactorField.value);
+            if (!isNaN(quantity) && !isNaN(unitPrice) && !isNaN(conversionFactor)) {
+                totalPriceField.value = (quantity * unitPrice * conversionFactor).toFixed(2);
+            }
+        }
+
+        function checkStock() {
+            const productName = productNameField.value;
+            const unit = unitField.value;
+            const quantity = parseFloat(quantityField.value);
+            const conversionFactor = parseFloat(conversionFactorField.value);
+
+            if (productName && unit && !isNaN(quantity) && !isNaN(conversionFactor)) {
+                fetch(`/api/check_stock?product_name=${encodeURIComponent(productName)}&unit=${encodeURIComponent(unit)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        stockInfo.textContent = `Current stock: ${data.current_stock}`;
+                        if (quantity * conversionFactor > data.current_stock) {
+                            stockInfo.classList.add('text-danger');
+                            stockInfo.textContent += " - Not enough stock!";
+                            submitButton.disabled = true;
+                        } else {
+                            stockInfo.classList.remove('text-danger');
+                            submitButton.disabled = false;
+                        }
+                    });
+            }
+        }
+
+        function fetchConversionFactor(productName) {
+            fetch(`/get_conversion_factor/${encodeURIComponent(productName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.conversion_factor && isBulkField.checked) {
+                        conversionFactorField.value = data.conversion_factor;
+                    } else {
+                        conversionFactorField.value = 1;
+                    }
+                    calculateTotalPrice();
+                    checkStock();
+                });
+        }
+
+        productNameField.addEventListener('input', function() {
+            const query = this.value;
+            if (query.length > 1) {
+                fetch(`/api/product_suggestions?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        productSuggestions.innerHTML = '';
+                        data.forEach(product => {
+                            const item = document.createElement('a');
+                            item.classList.add('list-group-item', 'list-group-item-action');
+                            item.textContent = product.name;
+                            if (product.in_stock) {
+                                item.classList.add('text-success');
+                            } else {
+                                item.classList.add('text-danger');
+                                item.textContent += ' (Out of Stock)';
+                            }
+                            item.addEventListener('click', function() {
+                                productNameField.value = product.name;
+                                unitField.value = product.unit;
+                                fetchConversionFactor(product.name);
+                                productSuggestions.innerHTML = '';
+                                checkStock();
+                            });
+                            productSuggestions.appendChild(item);
+                        });
+                        if (data.length === 0) {
+                            const item = document.createElement('div');
+                            item.classList.add('list-group-item', 'text-danger');
+                            item.textContent = 'Product not found. You cannot sell this product.';
+                            productSuggestions.appendChild(item);
+                            submitButton.disabled = true;
+                        } else {
+                            submitButton.disabled = false;
+                        }
+                    });
+            } else {
+                productSuggestions.innerHTML = '';
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!productNameField.contains(event.target) && !productSuggestions.contains(event.target)) {
+                productSuggestions.innerHTML = '';
+            }
+        });
+
+        unitField.addEventListener('change', function() {
+            if (this.value === 'packet') {
+                fetchConversionFactor(productNameField.value);
+            } else {
+                conversionFactorField.value = 1;
+            }
+            calculateTotalPrice();
+            checkStock();
+        });
+
+        quantityField.addEventListener('input', function() {
+            calculateTotalPrice();
+            checkStock();
+        });
+
+        unitPriceField.addEventListener('input', calculateTotalPrice);
+
+        isBulkField.addEventListener('change', function() {
+            if (this.checked) {
+                conversionFactorRow.style.display = 'block';
+                fetchConversionFactor(productNameField.value);
+            } else {
+                conversionFactorRow.style.display = 'none';
+                conversionFactorField.value = 1;
+            }
+            calculateTotalPrice();
+            checkStock();
+        });
+
+        conversionFactorField.addEventListener('input', function() {
+            calculateTotalPrice();
+            checkStock();
+        });
+
+        // Initial stock check when loading the page
+        checkStock();
+    });
+</script>
+{% endblock %}

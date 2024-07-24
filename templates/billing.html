@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Billing System</h1>
+        <div id="forms-container">
+            <div id="login-form" class="form">
+                <h2>Login</h2>
+                <input type="text" id="login-username" placeholder="Username">
+                <input type="password" id="login-password" placeholder="Password">
+                <button onclick="login()">Login</button>
+                <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Register</a></p>
+            </div>
+            <div id="register-form" class="form" style="display: none;">
+                <h2>Register</h2>
+                <input type="text" id="register-username" placeholder="Username">
+                <input type="password" id="register-password" placeholder="Password">
+                <button onclick="register()">Register</button>
+                <p>Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
+            </div>
+            <div id="purchase-form" class="form" style="display: none;">
+                <h2>Purchase Form</h2>
+                <input type="text" id="purchase-item" placeholder="Item">
+                <input type="number" id="purchase-quantity" placeholder="Quantity">
+                <input type="number" id="purchase-price" placeholder="Price">
+                <button onclick="purchase()">Purchase</button>
+            </div>
+            <div id="sales-form" class="form" style="display: none;">
+                <h2>Sales Form</h2>
+                <input type="text" id="sales-item" placeholder="Item">
+                <input type="number" id="sales-quantity" placeholder="Quantity">
+                <input type="number" id="sales-price" placeholder="Price">
+                <button onclick="sell()">Sell</button>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/scripts.js"></script>
+</body>
+</html>

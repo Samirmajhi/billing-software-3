@@ -1,0 +1,191 @@
+{% extends "layout.html" %}
+{% block title %}Record Purchase{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Record Purchase</h2>
+    <form id="purchase-form" method="POST" action="{{ url_for('purchase') }}">
+        {{ form.hidden_tag() }}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.product_name.label(class="form-label") }}
+                    {{ form.product_name(class="form-control", placeholder="Enter product name") }}
+                    {% for error in form.product_name.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.unit.label(class="form-label") }}
+                    {{ form.unit(class="form-control") }}
+                    {% for error in form.unit.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.quantity.label(class="form-label") }}
+                    {{ form.quantity(class="form-control", type="number", min="1", step="1") }}
+                    {% for error in form.quantity.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.vendor.label(class="form-label") }}
+                    {{ form.vendor(class="form-control", placeholder="Enter vendor name") }}
+                    {% for error in form.vendor.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.purchase_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">RS.</span>
+                        {{ form.purchase_price(class="form-control", type="number", min="0.01", step="0.01") }}
+                    </div>
+                    {% for error in form.purchase_price.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.per_unit_price.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">RS.</span>
+                        {{ form.per_unit_price(class="form-control", readonly=true) }}
+                    </div>
+                    {% for error in form.per_unit_price.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.payment_mode.label(class="form-label") }}
+                    {{ form.payment_mode(class="form-control") }}
+                    {% for error in form.payment_mode.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.purchase_date.label(class="form-label") }}
+                    {{ form.purchase_date(class="form-control", readonly=true) }}
+                    {% for error in form.purchase_date.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group d-flex align-items-center checkbox-container">
+                    {{ form.is_bulk.label(class="form-label") }}
+                    {{ form.is_bulk(class="form-check-input") }}
+                    {% for error in form.is_bulk.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+          
+        <div class="row mt-3" id="conversion-factor-row" style="display: none;">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.conversion_factor.label(class="form-label") }}
+                    {{ form.conversion_factor(class="form-control", type="number", min="1", step="1") }}
+                    {% for error in form.conversion_factor.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var quantityField = document.getElementById('quantity');
+    var purchasePriceField = document.getElementById('purchase_price');
+    var perUnitPriceField = document.getElementById('per_unit_price');
+    var purchaseDateField = document.getElementById('purchase_date');
+    var productNameField = document.getElementById('product_name');
+    var conversionFactorField = document.getElementById('conversion_factor');
+    var unitField = document.getElementById('unit');
+    var isBulkField = document.getElementById('is_bulk');
+    var conversionFactorRow = document.getElementById('conversion-factor-row');
+
+    // Set the purchase date to today's date
+    var today = new Date().toISOString().split('T')[0];
+    purchaseDateField.value = today;
+
+    function calculatePerUnitPrice() {
+        var quantity = parseFloat(quantityField.value);
+        var totalPurchasePrice = parseFloat(purchasePriceField.value);
+
+        if (!isNaN(quantity) && !isNaN(totalPurchasePrice) && quantity > 0) {
+            var perUnitPrice = totalPurchasePrice / quantity;
+            perUnitPriceField.value = perUnitPrice.toFixed(2);
+        } else {
+            perUnitPriceField.value = '';
+        }
+    }
+
+    quantityField.addEventListener('input', calculatePerUnitPrice);
+    purchasePriceField.addEventListener('input', calculatePerUnitPrice);
+
+    function updateConversionFactor() {
+        var productName = productNameField.value;
+
+        if (productName) {
+            fetch(`/get_conversion_factor/${productName}`)
+                .then(response => response.json())
+                .then(data => {
+                    conversionFactorField.value = 1;  // Default to 1
+                    if (data.conversion_factor && isBulkField.checked) {
+                        conversionFactorField.value = data.conversion_factor;
+                    }
+                });
+        }
+    }
+
+    productNameField.addEventListener('blur', updateConversionFactor);
+
+    isBulkField.addEventListener('change', function() {
+        if (isBulkField.checked) {
+            conversionFactorRow.style.display = 'block';
+            updateConversionFactor();
+        } else {
+            conversionFactorRow.style.display = 'none';
+            conversionFactorField.value = 1;
+        }
+    });
+
+    unitField.addEventListener('change', function() {
+        if (unitField.value === 'unit') {
+            conversionFactorField.value = 1;
+        } else {
+            productNameField.dispatchEvent(new Event('blur'));
+        }
+    });
+});
+</script>
+{% endblock %}

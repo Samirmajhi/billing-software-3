@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block title %}Stock Management{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search products" id="search-input">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="clear-search">Clear</button>
+                    <button class="btn btn-primary" type="button" id="search-button">Search</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3 mb-md-0">
+            <select class="form-control" id="stock-level-filter">
+                <option value="">All Stock Levels</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+        </div>
+        <div class="col-md-4 text-md-right">
+            <button class="btn btn-secondary mb-2 mb-md-0" id="refresh-button">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <a href="{{ url_for('export_stock_csv') }}" class="btn btn-success">
+                <i class="fas fa-file-csv mr-1"></i> Export to CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th><a href="#" class="sort-link" data-sort="product_name">Product Name <i class="fas fa-sort"></i></a></th>
+                    <th><a href="#" class="sort-link" data-sort="unit">Unit <i class="fas fa-sort"></i></a></th>
+                    <th><a href="#" class="sort-link" data-sort="quantity">Quantity <i class="fas fa-sort"></i></a></th>
+                    <th style="color: black;">Stock Level</th>
+
+                    <th><a href="#" class="sort-link" data-sort="last_updated">Last Updated <i class="fas fa-sort"></i></a></th>
+                </tr>
+            </thead>
+            <tbody id="stock-table-body">
+                <!-- Table body will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Pagination will be populated by JavaScript -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+let currentPage = 1;
+let currentSort = 'product_name';
+let currentOrder = 'asc';
+let currentSearch = '';
+let currentStockLevel = '';
+
+function loadStock() {
+    const url = new URL('/api/stock', window.location.origin);
+    url.searchParams.append('page', currentPage);
+    url.searchParams.append('sort', currentSort);
+    url.searchParams.append('order', currentOrder);
+    url.searchParams.append('search', currentSearch);
+    url.searchParams.append('stock_level', currentStockLevel);
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            updateTable(data.items);
+            updatePagination(data.page, data.pages);
+        });
+}
+
+function updateTable(items) {
+    const tableBody = document.getElementById('stock-table-body');
+    tableBody.innerHTML = '';
+
+    items.forEach(item => {
+        let stockLevel;
+        if (item.quantity < 100) {
+            stockLevel = '<span class="badge badge-danger">Low</span>';
+        } else if (item.quantity < 500) {
+            stockLevel = '<span class="badge badge-warning">Medium</span>';
+        } else {
+            stockLevel = '<span class="badge badge-success">High</span>';
+        }
+
+        const row = `
+            <tr>
+                <td>${item.product_name}</td>
+                <td>${item.unit}</td>
+                <td>${item.quantity}</td>
+                <td>${stockLevel}</td>
+                <td>${item.last_updated}</td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+}
+
+function updatePagination(currentPage, totalPages) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+        pagination.appendChild(li);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    loadStock();
+
+    document.getElementById('search-button').addEventListener('click', () => {
+        currentSearch = document.getElementById('search-input').value;
+        currentPage = 1;
+        loadStock();
+    });
+
+    document.getElementById('clear-search').addEventListener('click', () => {
+        document.getElementById('search-input').value = '';
+        currentSearch = '';
+        currentPage = 1;
+        loadStock();
+    });
+
+    document.getElementById('stock-level-filter').addEventListener('change', (event) => {
+        currentStockLevel = event.target.value;
+        currentPage = 1;
+        loadStock();
+    });
+
+    document.getElementById('refresh-button').addEventListener('click', loadStock);
+
+    document.querySelectorAll('.sort-link').forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const newSort = event.target.dataset.sort;
+            if (newSort === currentSort) {
+                currentOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = newSort;
+                currentOrder = 'asc';
+            }
+            loadStock();
+        });
+    });
+
+    document.getElementById('pagination').addEventListener('click', (event) => {
+        if (event.target.tagName === 'A') {
+            event.preventDefault();
+            currentPage = parseInt(event.target.dataset.page);
+            loadStock();
+        }
+    });
+});
+</script>
+{% endblock %}
