@@ -1,4 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify, Response
+
+from flask import Flask, logging, render_template, redirect, url_for, flash, request, session, jsonify, Response
+from pymysql import OperationalError
 from extensions import db
 from sqlalchemy import func
 from forms import RegistrationForm, LoginForm, PurchaseForm, SalesForm
@@ -225,47 +227,63 @@ def sales():
 
     return render_template('sales.html', form=form)
 
-
-
 @app.route('/api/check_stock', methods=['GET'])
 def check_stock():
     product_name = request.args.get('product_name')
-    unit = request.args.get('unit')
+
+    if not product_name:
+        return jsonify({'error': 'Product name is required.'}), 400
+
     current_stock = get_current_stock(product_name)
-    print(current_stock)
     return jsonify({'current_stock': current_stock})
 
 def get_current_stock(product_name):
-    stock_item = Stock.query.filter_by(product_name=product_name).first()
-    if stock_item:
-        print(stock_item)
-        return stock_item.quantity
-    return 0
+    try:
+        stock_item = Stock.query.filter_by(product_name=product_name).first()
+        if stock_item:
+            return stock_item.quantity
+        return 0
+    except OperationalError as e:
+        logging.error(f"Database error: {e}")
+        return 0
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return 0
+# Setup logging for error tracking
+# logging.basicConfig(level=logging.ERROR)
 
-@app.route('/api/product_suggestions', methods=['GET'])
-def product_suggestions():
-    query = request.args.get('query', '').lower()
-    products = db.session.query(Purchase.product_name, Purchase.unit).distinct().all()
-    print(f"Products in DB: {products}")  # Debugging line
-    suggestions = []
-    for product_name, unit in products:
-        if query in product_name.lower():
-            current_stock = get_current_stock(product_name)
-            suggestions.append({
-                'name': product_name,
-                'unit': unit,
-                'in_stock': current_stock > 0
-            })
-    print(f"Suggestions: {suggestions}")  # Debugging line
-    return jsonify(suggestions)
+# @app.route('/api/product_suggestions', methods=['GET'])
+# def product_suggestions():
+#     query = request.args.get('query', '').lower()
+#     products = db.session.query(Purchase.product_name, Purchase.unit).distinct().all()
+#     print(f"Products in DB: {products}")  # Debugging line
+#     suggestions = []
+#     for product_name, unit in products:
+#         if query in product_name.lower():
+#             current_stock = get_current_stock(product_name)
+#             suggestions.append({
+#                 'name': product_name,
+#                 'unit': unit,
+#                 'in_stock': current_stock > 0
+#             })
+#     print(f"Suggestions: {suggestions}")  # Debugging line
+#     return jsonify(suggestions)
 
-def get_current_stock(product_name):
-    stock_item = Stock.query.filter_by(product_name=product_name).first()
-    if stock_item:
-        print(f"Stock Item Found: {stock_item.product_name} - Quantity: {stock_item.quantity}")
-        return stock_item.quantity
-    print(f"No Stock Item Found for: {product_name}")
-    return 0
+# def get_current_stock(product_name):
+#     try:
+#         stock_item = Stock.query.filter_by(product_name=product_name).first()
+#         if stock_item:
+#             print(f"Stock Item Found: {stock_item.product_name} - Quantity: {stock_item.quantity}")
+#             return stock_item.quantity
+#         print(f"No Stock Item Found for: {product_name}")
+#         return 0
+#     except OperationalError as e:
+#         logging.error(f"Database error: {e}")
+#         return 0
+#     except Exception as e:
+#         logging.error(f"Unexpected error: {e}")
+#         return 0
+
 
 
 
@@ -568,14 +586,36 @@ from flask import jsonify, request, session
 
 from datetime import datetime, timedelta
 from flask import jsonify, request, session
-
-@app.route('/api/products')
+@app.route('/api/products', methods=['GET'])
 def get_products():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    products = db.session.query(Sale.product_name).distinct().all()
-    product_list = [product[0] for product in products]
-    return jsonify({'products': product_list})
+    try:
+        products = db.session.query(Purchase.product_name).distinct().all()
+        product_list = [product[0] for product in products]
+        return jsonify({'products': product_list})
+    except OperationalError as e:
+        logging.error(f"Database error: {e}")
+        return jsonify({'error': 'Database error occurred.'}), 500
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
+    
+@app.route('/api/vendors', methods=['GET'])
+def get_vendors():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        vendors = db.session.query(Purchase.vendor).distinct().all()
+        vendor_list = [vendor[0] for vendor in vendors]
+        return jsonify({'vendors': vendor_list})
+    except OperationalError as e:
+        logging.error(f"Database error: {e}")
+        return jsonify({'error': 'Database error occurred.'}), 500
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
+
 from sqlalchemy import cast, Date
 from sqlalchemy import func, cast, Date, text
 from datetime import datetime, timedelta

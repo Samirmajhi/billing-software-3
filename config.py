@@ -12,3 +12,19 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASS}@127.0.0.1:3306/{DB_NAME}"
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# import os
+
+# class Config:
+#     SECRET_KEY = os.environ.get('SECRET_KEY', 'default_secret_key')
+    
+#     # Local MySQL configuration
+#     DB_USER = 'root'
+#     DB_PASS = 'root'
+#     DB_NAME = 'billing'
+#     DB_HOST = '127.0.0.1'
+
+#     # For local MySQL
+#     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+    
+#     SQLALCHEMY_TRACK_MODIFICATIONS = False

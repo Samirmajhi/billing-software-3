@@ -9,7 +9,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     {{ form.product_name.label(class="form-label") }}
-                    {{ form.product_name(class="form-control", placeholder="Enter product name") }}
+                    <input list="product-list" id="product_name" name="product_name" class="form-control" placeholder="Enter or select product name">
+                    <datalist id="product-list"></datalist>
                     {% for error in form.product_name.errors %}
                         <span class="text-danger">{{ error }}</span>
                     {% endfor %}
@@ -38,7 +39,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     {{ form.vendor.label(class="form-label") }}
-                    {{ form.vendor(class="form-control", placeholder="Enter vendor name") }}
+                    <input list="vendor-list" id="vendor" name="vendor" class="form-control" placeholder="Enter or select vendor name">
+                    <datalist id="vendor-list"></datalist>
                     {% for error in form.vendor.errors %}
                         <span class="text-danger">{{ error }}</span>
                     {% endfor %}
@@ -102,8 +104,6 @@
                 </div>
             </div>
         </div>
-        
-          
         <div class="row mt-3" id="conversion-factor-row" style="display: none;">
             <div class="col-md-6">
                 <div class="form-group">
@@ -132,10 +132,35 @@ document.addEventListener('DOMContentLoaded', function() {
     var unitField = document.getElementById('unit');
     var isBulkField = document.getElementById('is_bulk');
     var conversionFactorRow = document.getElementById('conversion-factor-row');
+    var productList = document.getElementById('product-list');
+    var vendorField = document.getElementById('vendor');
+    var vendorList = document.getElementById('vendor-list');
 
     // Set the purchase date to today's date
     var today = new Date().toISOString().split('T')[0];
     purchaseDateField.value = today;
+
+    // Fetch product names from the /api/products endpoint and populate the datalist
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(data => {
+            data.products.forEach(product => {
+                var option = document.createElement('option');
+                option.value = product;
+                productList.appendChild(option);
+            });
+        });
+
+    // Fetch vendor names from the /api/vendors endpoint and populate the datalist
+    fetch('/api/vendors')
+        .then(response => response.json())
+        .then(data => {
+            data.vendors.forEach(vendor => {
+                var option = document.createElement('option');
+                option.value = vendor;
+                vendorList.appendChild(option);
+            });
+        });
 
     function calculatePerUnitPrice() {
         var quantity = parseFloat(quantityField.value);
