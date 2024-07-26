@@ -25,6 +25,18 @@ def create_app():
 app = create_app()
 migrate = Migrate(app, db)
 
+from functools import wraps
+from flask import session, jsonify
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 
 
 @app.route('/')
@@ -789,18 +801,27 @@ def get_current_stock(end_date, product=None):
     return current_stock
 
 @app.route('/data')
+@login_required
 def data():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
     return render_template('data.html')
 
 @app.route('/view_by_purchase')
+@login_required
 def view_by_purchase():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
     purchases = Purchase.query.order_by(Purchase.purchase_date.desc()).all()
     columns = ['Product Name', 'Unit', 'Quantity', 'Purchase Date', 'Vendor', 'Per Unit Price', 'Purchase Price', 'Payment Mode']
     records = [[p.product_name, p.unit, p.quantity, p.purchase_date, p.vendor, p.per_unit_price, p.purchase_price, p.payment_mode] for p in purchases]
     return render_template('data.html', columns=columns, records=records, download_data_type='purchases')
 
 @app.route('/view_by_sales')
+@login_required
 def view_by_sales():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     sales = Sale.query.order_by(Sale.sale_date.desc()).all()
     columns = ['Product Name', 'Unit', 'Quantity', 'Sale Date', 'Unit Price', 'Total Price']
     records = [[s.product_name, s.unit, s.quantity, s.sale_date, s.unit_price, s.total_price] for s in sales]
@@ -808,7 +829,10 @@ def view_by_sales():
 
 
 @app.route('/view_by_transaction_modes')
+@login_required
 def view_by_transaction_modes():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     mode = request.args.get('mode')
     if mode:
         sales_data = Sale.query.filter_by(payment_mode=mode).all()
@@ -819,7 +843,10 @@ def view_by_transaction_modes():
     return render_template('data.html', columns=columns, records=records)
 
 @app.route('/download_csv')
+@login_required
 def download_csv():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
     data_type = request.args.get('data_type', 'default')
     
     if data_type == 'purchases':
@@ -861,7 +888,10 @@ def download_csv():
 
 
 @app.route('/download_excel')
+@login_required
 def download_excel():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
     data_type = request.args.get('data_type', 'default')
     
     if data_type == 'purchases':
