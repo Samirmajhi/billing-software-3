@@ -658,8 +658,16 @@ def chart_data():
         except ValueError:
             return jsonify({'error': 'Invalid date format'}), 400
     elif filter == 'week':
-        start_date = today - timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days=6, hours=23, minutes=59, seconds=59, microseconds=999999)
+    # Calculate the start of the week (most recent Sunday)
+        if today.weekday() == 6:
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start_date = today - timedelta(days=today.weekday() + 1)
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Calculate the end of the week (end of the upcoming Saturday)
+        end_date = start_date + timedelta(days=6)
+        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
     elif filter == 'month':
         start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         next_month = today.replace(day=28) + timedelta(days=4)
@@ -682,17 +690,16 @@ def chart_data():
     
 
     data = {
-        'sales': sales_data,
-        'purchases': purchases_data,
-        'topSelling': top_selling_data,
-        'totalSales': sum(sales_data['values']),
-        'totalPurchases': sum(purchases_data['values']),
-        'currentStock': current_stock
-    }
+    'sales': sales_data,
+    'purchases': purchases_data,
+    'topSelling': top_selling_data,
+    'totalSales': int(sum(sales_data['values'])),
+    'totalPurchases': int(sum(purchases_data['values'])),
+    'currentStock': current_stock
+}
     
     return jsonify(data)
 from datetime import datetime, timedelta
-
 def get_sales_data(start_date, end_date, product=None):
     # Convert datetime objects to strings in ISO format
     start_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -700,7 +707,7 @@ def get_sales_data(start_date, end_date, product=None):
     
     query = db.session.query(
         func.date(Sale.sale_date).label('date'),
-        func.sum(Sale.total_price).label('total')
+        func.round(func.sum(Sale.total_price), 0).label('total')  # Round to nearest integer
     ).filter(
         Sale.sale_date.between(start_str, end_str)
     )
@@ -717,10 +724,9 @@ def get_sales_data(start_date, end_date, product=None):
     values = []
     for sale in sales:
         labels.append(str(sale.date))
-        values.append(float(sale.total))
+        values.append(int(sale.total))  # Convert to integer
 
     return {'labels': labels, 'values': values}
-
 def get_purchases_data(start_date, end_date, product=None):
     # Convert datetime objects to strings in ISO format
     start_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -728,7 +734,7 @@ def get_purchases_data(start_date, end_date, product=None):
     
     query = db.session.query(
         func.date(Purchase.purchase_date).label('date'),
-        func.sum(Purchase.purchase_price).label('total')
+        func.round(func.sum(Purchase.purchase_price), 0).label('total')  # Round to nearest integer
     ).filter(
         Purchase.purchase_date.between(start_str, end_str)
     )
@@ -741,12 +747,11 @@ def get_purchases_data(start_date, end_date, product=None):
         func.date(Purchase.purchase_date)
     ).all()
 
-
     labels = []
     values = []
     for purchase in purchases:
         labels.append(str(purchase.date))
-        values.append(float(purchase.total))
+        values.append(int(purchase.total))  # Convert to integer
 
     return {'labels': labels, 'values': values}
 def get_top_selling_data(start_date, end_date, product=None):
